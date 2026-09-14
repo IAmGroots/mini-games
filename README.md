@@ -118,7 +118,7 @@ The built files will be in the `dist` folder, ready for deployment.
 
 - **React 18.3** - UI library
 - **TypeScript 5.5** - Type safety
-- **Vite 5.3** - Build tool and dev server
+- **Vite 6.4** - Build tool and dev server
 
 ### Styling
 

@@ -8,12 +8,12 @@ interface Pipe {
 }
 
 const GAME_HEIGHT = 600;
-const GAME_WIDTH = 400;
+const GAME_WIDTH = 600;
 const BIRD_SIZE = 40;
 const PIPE_WIDTH = 64;
 const PIPE_GAP = 150;
-const GRAVITY = 0.6;
-const JUMP_STRENGTH = -10;
+const GRAVITY = 0.5;
+const JUMP_STRENGTH = -7;
 const PIPE_SPEED = 3;
 
 export function useFlappyBird() {

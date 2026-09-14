@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
+export type Difficulty = "easy" | "medium" | "hard";
 type Player = "X" | "O";
 type Square = Player | null;
 
@@ -17,9 +19,13 @@ const WINNING_LINES = [
 export function useTicTacToe() {
   const [squares, setSquares] = useState<Square[]>(Array(9).fill(null));
   const [isXNext, setIsXNext] = useState(true);
-  const [xScore, setXScore] = useState(0);
-  const [oScore, setOScore] = useState(0);
-  const [draws, setDraws] = useState(0);
+  const [difficulty, setDifficulty] = useLocalStorage<Difficulty>(
+    "tictactoe-difficulty",
+    "medium",
+  );
+  const [xScore, setXScore] = useLocalStorage<number>("tictactoe-xScore", 0);
+  const [oScore, setOScore] = useLocalStorage<number>("tictactoe-oScore", 0);
+  const [draws, setDraws] = useLocalStorage<number>("tictactoe-draws", 0);
   const [winningLine, setWinningLine] = useState<number[] | null>(null);
 
   const winner = calculateWinner(squares);
@@ -29,14 +35,14 @@ export function useTicTacToe() {
   useEffect(() => {
     if (!isXNext && !winner && !isDraw) {
       const timer = setTimeout(() => {
-        const bestMove = getBestMove(squares);
-        if (bestMove !== -1) {
-          handleClick(bestMove);
+        const aiMove = getAiMove(squares, difficulty);
+        if (aiMove !== -1) {
+          handleClick(aiMove);
         }
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isXNext, winner, isDraw]);
+  }, [isXNext, winner, isDraw, difficulty]);
 
   function calculateWinner(
     squares: Square[],
@@ -149,6 +155,66 @@ export function useTicTacToe() {
     return bestMove;
   }
 
+  function getEmptyIndices(board: Square[]): number[] {
+    const empty: number[] = [];
+    board.forEach((sq, idx) => {
+      if (sq === null) empty.push(idx);
+    });
+    return empty;
+  }
+
+  function getRandomMove(board: Square[]): number {
+    const empty = getEmptyIndices(board);
+    if (empty.length === 0) return -1;
+    return empty[Math.floor(Math.random() * empty.length)];
+  }
+
+  function getWinningOrBlockingMove(board: Square[], player: Player): number {
+    for (const line of WINNING_LINES) {
+      const [a, b, c] = line;
+      const values = [board[a], board[b], board[c]];
+      const playerMatches = values.filter((v) => v === player).length;
+      const emptyMatches = values.filter((v) => v === null).length;
+
+      if (playerMatches === 2 && emptyMatches === 1) {
+        if (board[a] === null) return a;
+        if (board[b] === null) return b;
+        if (board[c] === null) return c;
+      }
+    }
+    return -1;
+  }
+
+  function getAiMove(board: Square[], diff: Difficulty): number {
+    if (diff === "easy") {
+      // 80% completely random move, 20% block or win if available
+      if (Math.random() < 0.2) {
+        const winMove = getWinningOrBlockingMove(board, "O");
+        if (winMove !== -1) return winMove;
+      }
+      return getRandomMove(board);
+    }
+
+    if (diff === "medium") {
+      // 1. Prioritize immediate win
+      const winMove = getWinningOrBlockingMove(board, "O");
+      if (winMove !== -1) return winMove;
+
+      // 2. Block player immediate win
+      const blockMove = getWinningOrBlockingMove(board, "X");
+      if (blockMove !== -1) return blockMove;
+
+      // 3. 50% Minimax optimal, 50% random
+      if (Math.random() < 0.5) {
+        return getBestMove(board);
+      }
+      return getRandomMove(board);
+    }
+
+    // Hard: 100% Unbeatable Minimax
+    return getBestMove(board);
+  }
+
   return {
     squares,
     isXNext,
@@ -158,6 +224,8 @@ export function useTicTacToe() {
     xScore,
     oScore,
     draws,
+    difficulty,
+    setDifficulty,
     handleClick,
     resetGame,
     resetScores,

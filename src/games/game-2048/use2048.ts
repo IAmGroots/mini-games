@@ -3,18 +3,36 @@ import { useState, useEffect, useCallback } from "react";
 type Direction = "up" | "down" | "left" | "right";
 
 export function use2048() {
-  const [grid, setGrid] = useState<number[][]>([]);
+  const initializeGrid = () => {
+    const newGrid = Array(4)
+      .fill(0)
+      .map(() => Array(4).fill(0));
+    // add 2 initial tiles
+    const emptyCells: { row: number; col: number }[] = [];
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        emptyCells.push({ row: r, col: c });
+      }
+    }
+    if (emptyCells.length >= 2) {
+      const idx1 = Math.floor(Math.random() * emptyCells.length);
+      const [c1] = emptyCells.splice(idx1, 1);
+      newGrid[c1.row][c1.col] = Math.random() < 0.9 ? 2 : 4;
+
+      const idx2 = Math.floor(Math.random() * emptyCells.length);
+      const [c2] = emptyCells.splice(idx2, 1);
+      newGrid[c2.row][c2.col] = Math.random() < 0.9 ? 2 : 4;
+    }
+    return newGrid;
+  };
+
+  const [grid, setGrid] = useState<number[][]>(() => initializeGrid());
   const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [hasWon, setHasWon] = useState(false);
 
   const initializeGame = () => {
-    const newGrid = Array(4)
-      .fill(0)
-      .map(() => Array(4).fill(0));
-    addRandomTile(newGrid);
-    addRandomTile(newGrid);
-    setGrid(newGrid);
+    setGrid(initializeGrid());
     setScore(0);
     setIsGameOver(false);
     setHasWon(false);
